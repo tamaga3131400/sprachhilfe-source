@@ -10,6 +10,12 @@ The current stable release for macOS is available from the [Sprachhilfe distribu
 
 For source distribution, local build notes, and contribution rules, see [docs/DISTRIBUTION.md](docs/DISTRIBUTION.md).
 
+## Support Sprachhilfe
+
+Sprachhilfe is developed as a native macOS app for local AI, controlled context, and personal knowledge sources. Your support helps fund continued development, testing, and future versions.
+
+[Support Sprachhilfe via PayPal](https://paypal.me/tarikz)
+
 ## Features
 
 ### Transcription
