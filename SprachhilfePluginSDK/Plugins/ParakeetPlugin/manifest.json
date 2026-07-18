@@ -1,0 +1,19 @@
+{
+    "id": "com.sprachhilfe.parakeet",
+    "name": "Parakeet",
+    "version": "1.2.13",
+    "minHostVersion": "1.2.1",
+    "sdkCompatibilityVersion": "v1",
+    "minOSVersion": "14.0",
+    "supportedArchitectures": [
+        "arm64"
+    ],
+    "author": "Sprachhilfe",
+    "description": "Local speech-to-text powered by NVIDIA Parakeet TDT. Fast and accurate, 25 languages.",
+    "descriptions": {
+        "de": "Lokale Spracherkennung mit NVIDIA Parakeet TDT. Schnell und präzise, 25 Sprachen."
+    },
+    "category": "transcription",
+    "iconSystemName": "bird",
+    "principalClass": "ParakeetPlugin"
+}

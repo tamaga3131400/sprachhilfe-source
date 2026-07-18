@@ -1,0 +1,17 @@
+{
+    "id": "com.sprachhilfe.elevenlabs",
+    "name": "ElevenLabs",
+    "version": "1.0.0",
+    "minHostVersion": "0.12.0",
+    "sdkCompatibilityVersion": "v1",
+    "minOSVersion": "14.0",
+    "author": "Sprachhilfe",
+    "description": "Cloud transcription via ElevenLabs Scribe API with real-time WebSocket streaming.",
+    "descriptions": {
+        "de": "Cloud-Transkription über die ElevenLabs-Scribe-API mit Echtzeit-WebSocket-Streaming."
+    },
+    "category": "transcription",
+    "iconSystemName": "waveform.badge.mic",
+    "principalClass": "ElevenLabsPlugin",
+    "requiresAPIKey": true
+}

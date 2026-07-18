@@ -1,0 +1,17 @@
+{
+    "id": "com.sprachhilfe.neo4jgraph",
+    "name": "Wissensgraph (Neo4j)",
+    "version": "1.0.0",
+    "minHostVersion": "1.6.9",
+    "sdkCompatibilityVersion": "v1",
+    "minOSVersion": "14.0",
+    "author": "Sprachhilfe",
+    "description": "Connects to a Neo4j knowledge graph over HTTPS, or local HTTP on trusted private networks, alongside the vector store.",
+    "descriptions": {
+        "de": "Verbindet sich per HTTPS oder lokalem HTTP in vertrauenswürdigen privaten Netzen mit Neo4j als Wissensgraph parallel zur Vektordatenbank."
+    },
+    "category": "memory",
+    "iconSystemName": "point.3.connected.trianglepath.dotted",
+    "requiresAPIKey": false,
+    "principalClass": "Neo4jGraphPlugin"
+}

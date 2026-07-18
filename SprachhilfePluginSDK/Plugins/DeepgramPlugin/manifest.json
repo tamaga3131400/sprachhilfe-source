@@ -1,0 +1,17 @@
+{
+    "id": "com.sprachhilfe.deepgram",
+    "name": "Deepgram",
+    "version": "1.0.4",
+    "minHostVersion": "0.12.0",
+    "sdkCompatibilityVersion": "v1",
+    "minOSVersion": "14.0",
+    "author": "Sprachhilfe",
+    "description": "Cloud transcription via Deepgram API with real-time WebSocket streaming. Requires API key.",
+    "descriptions": {
+        "de": "Cloud-Transkription über die Deepgram-API mit Echtzeit-WebSocket-Streaming. Erfordert API-Key."
+    },
+    "category": "transcription",
+    "iconSystemName": "waveform.badge.mic",
+    "principalClass": "DeepgramPlugin",
+    "requiresAPIKey": true
+}

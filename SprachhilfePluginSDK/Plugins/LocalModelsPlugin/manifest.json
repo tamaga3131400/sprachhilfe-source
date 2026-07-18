@@ -1,0 +1,19 @@
+{
+    "id": "com.sprachhilfe.localmodels",
+    "name": "Local Models",
+    "version": "1.0.0",
+    "minHostVersion": "1.6.2",
+    "sdkCompatibilityVersion": "v1",
+    "supportedArchitectures": [
+        "arm64"
+    ],
+    "minOSVersion": "14.0",
+    "author": "Sprachhilfe",
+    "description": "Run any MLX-compatible model from Hugging Face locally on Apple Silicon. No API key required.",
+    "descriptions": {
+        "de": "Beliebige MLX-kompatible Modelle von Hugging Face lokal auf Apple Silicon nutzen. Kein API-Key erforderlich."
+    },
+    "category": "llm",
+    "iconSystemName": "shippingbox",
+    "principalClass": "LocalModelsPlugin"
+}

@@ -1,0 +1,17 @@
+{
+    "id": "com.sprachhilfe.speechmatics",
+    "name": "Speechmatics",
+    "version": "1.0.0",
+    "minHostVersion": "0.12.0",
+    "sdkCompatibilityVersion": "v1",
+    "minOSVersion": "14.0",
+    "author": "Sprachhilfe",
+    "description": "Cloud transcription via Speechmatics API with real-time WebSocket streaming. Requires API key.",
+    "descriptions": {
+        "de": "Cloud-Transkription über die Speechmatics-API mit Echtzeit-WebSocket-Streaming. Erfordert API-Key."
+    },
+    "category": "transcription",
+    "iconSystemName": "waveform.badge.mic",
+    "principalClass": "SpeechmaticsPlugin",
+    "requiresAPIKey": true
+}

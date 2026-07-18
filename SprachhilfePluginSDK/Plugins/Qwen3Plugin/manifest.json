@@ -1,0 +1,19 @@
+{
+    "id": "com.sprachhilfe.qwen3",
+    "name": "Qwen3 ASR",
+    "version": "1.1.0",
+    "minHostVersion": "1.4.0",
+    "sdkCompatibilityVersion": "v1",
+    "minOSVersion": "14.0",
+    "supportedArchitectures": [
+        "arm64"
+    ],
+    "author": "Sprachhilfe",
+    "description": "Local Qwen3-ASR speech-to-text powered by MLX on Apple Silicon. 30 languages plus Chinese dialect coverage, no API key required.",
+    "descriptions": {
+        "de": "Lokale Qwen3-ASR-Spracherkennung mit MLX auf Apple Silicon. 30 Sprachen plus chinesische Dialektabdeckung, kein API-Key nötig."
+    },
+    "category": "transcription",
+    "iconSystemName": "cpu",
+    "principalClass": "Qwen3Plugin"
+}

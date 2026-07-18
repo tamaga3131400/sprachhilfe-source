@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "version": "1.6.12",
+  "sourceTag": "v1.6.12",
+  "sourceTagURL": "https://github.com/tamaga3131400/sprachhilfe-source/tree/v1.6.12",
+  "assetURL": "https://github.com/tamaga3131400/sprachhilfe-dist/releases/download/v1.6.12/Sprachhilfe-1.6.12.dmg",
+  "minimumMacOS": "14.0",
+  "dmg": "Sprachhilfe-1.6.12.dmg",
+  "dmgSHA256": "93ff1c1dbb2f575773df147f18a226cc313efa8f5e3586d50d275a8162e203c8",
+  "sparkleEdSignature": "WQ7Y5tp7v83yePxw4QUT6RwnTq0VCF+6UNkDP5RvyUvj0oEtuhyFWNUlpz6NW0POk4fyxPCPdSVkZbxUSD+oBQ==",
+  "tests": {
+    "Gemma4PluginTests": "passed",
+    "Neo4jGraphPluginTests": "passed",
+    "InfoPlistLint": "passed",
+    "fullAppTest": "passed",
+    "fullAppTestLogSHA256": "635fe9ea39820f5ae51668ea28ffb935ff9b3742f64997eb74e9cf9d4e40977b"
+  },
+  "artifactVerification": [
+    "Developer ID signature",
+    "Apple notarization and stapling",
+    "Gatekeeper assessment",
+    "Sparkle EdDSA signature"
+  ]
+}

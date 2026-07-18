@@ -1,0 +1,16 @@
+{
+    "id": "com.sprachhilfe.obsidian",
+    "name": "Obsidian",
+    "version": "1.0.0",
+    "minHostVersion": "0.9.0",
+    "sdkCompatibilityVersion": "v1",
+    "minOSVersion": "14.0",
+    "author": "Sprachhilfe",
+    "description": "Save transcriptions to your Obsidian vault as Markdown notes. Supports daily notes, frontmatter, and auto-export.",
+    "descriptions": {
+        "de": "Transkriptionen als Markdown-Notizen in deinem Obsidian-Vault speichern. Unterstützt Tagesnotizen, Frontmatter und Auto-Export."
+    },
+    "category": "action",
+    "iconSystemName": "doc.text",
+    "principalClass": "ObsidianPlugin"
+}

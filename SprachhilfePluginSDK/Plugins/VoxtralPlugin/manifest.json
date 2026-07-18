@@ -1,0 +1,19 @@
+{
+    "id": "com.sprachhilfe.voxtral",
+    "name": "Voxtral",
+    "version": "1.0.6",
+    "minHostVersion": "1.4.0",
+    "sdkCompatibilityVersion": "v1",
+    "minOSVersion": "14.0",
+    "supportedArchitectures": [
+        "arm64"
+    ],
+    "author": "Sprachhilfe",
+    "description": "Local speech-to-text powered by Voxtral MLX on Apple Silicon. Fast and accurate.",
+    "descriptions": {
+        "de": "Lokale Spracherkennung mit Voxtral MLX auf Apple Silicon. Schnell und präzise."
+    },
+    "category": "transcription",
+    "iconSystemName": "cpu",
+    "principalClass": "VoxtralPlugin"
+}

@@ -1,0 +1,19 @@
+{
+    "id": "com.sprachhilfe.whisperkit",
+    "name": "WhisperKit",
+    "version": "1.0.16",
+    "minHostVersion": "1.4.0",
+    "sdkCompatibilityVersion": "v1",
+    "minOSVersion": "14.0",
+    "supportedArchitectures": [
+        "arm64"
+    ],
+    "author": "Sprachhilfe",
+    "description": "Local speech-to-text powered by WhisperKit. 8 model sizes, 99 languages, streaming support.",
+    "descriptions": {
+        "de": "Lokale Spracherkennung mit WhisperKit. 8 Modellgrößen, 99 Sprachen, Streaming-Unterstützung."
+    },
+    "category": "transcription",
+    "iconSystemName": "waveform",
+    "principalClass": "WhisperKitPlugin"
+}

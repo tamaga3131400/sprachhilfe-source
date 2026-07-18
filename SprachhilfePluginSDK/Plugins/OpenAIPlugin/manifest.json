@@ -1,0 +1,23 @@
+{
+    "id": "com.sprachhilfe.openai",
+    "name": "OpenAI / ChatGPT",
+    "version": "1.1.1",
+    "minHostVersion": "1.4.0",
+    "sdkCompatibilityVersion": "v1",
+    "minOSVersion": "14.0",
+    "author": "Sprachhilfe",
+    "description": "Cloud transcription, OpenAI/ChatGPT prompts, and text-to-speech. Use an API key for STT/TTS or ChatGPT login for prompts.",
+    "descriptions": {
+        "de": "Cloud-Transkription, OpenAI-/ChatGPT-Prompts und Text-to-Speech. STT/TTS brauchen einen API-Key, Prompts funktionieren auch per ChatGPT-Login."
+    },
+    "category": "transcription",
+    "categories": [
+        "transcription",
+        "llm",
+        "tts"
+    ],
+    "hosting": "cloud",
+    "iconSystemName": "brain",
+    "principalClass": "OpenAIPlugin",
+    "requiresAPIKey": false
+}

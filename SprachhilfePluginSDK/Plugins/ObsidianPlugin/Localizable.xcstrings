@@ -1,0 +1,216 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Add metadata (date, app, language, tags) to each note." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Metadaten (Datum, App, Sprache, Tags) zu jeder Notiz hinzufügen."
+          }
+        }
+      }
+    },
+    "Append all transcriptions to a single daily file instead of creating individual notes." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle Transkriptionen an eine einzelne Tagesdatei anhängen, statt einzelne Notizen zu erstellen."
+          }
+        }
+      }
+    },
+    "Auto-Export" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto-Export"
+          }
+        }
+      }
+    },
+    "Automatically save every transcription to Obsidian." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jede Transkription automatisch in Obsidian speichern."
+          }
+        }
+      }
+    },
+    "Browse..." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Durchsuchen ..."
+          }
+        }
+      }
+    },
+    "Copy Instruction" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anweisung kopieren"
+          }
+        }
+      }
+    },
+    "Create a Custom Workflow, paste this into Instruction, and set Action Target to \"Save to Obsidian\"." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erstelle einen eigenen Workflow, füge dies in Anweisung ein und setze das Action-Ziel auf \"Save to Obsidian\"."
+          }
+        }
+      }
+    },
+    "Daily Note Mode" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tagesnotiz-Modus"
+          }
+        }
+      }
+    },
+    "Detected Vaults" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erkannte Vaults"
+          }
+        }
+      }
+    },
+    "File Organization" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dateiorganisation"
+          }
+        }
+      }
+    },
+    "Filename:" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dateiname:"
+          }
+        }
+      }
+    },
+    "No vault selected" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kein Vault ausgewählt"
+          }
+        }
+      }
+    },
+    "Placeholders: {{DATE}}, {{TIME}}, {{APP}}, {{LANG}}" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Platzhalter: {{DATE}}, {{TIME}}, {{APP}}, {{LANG}}"
+          }
+        }
+      }
+    },
+    "Preview: %@.md" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vorschau: %@.md"
+          }
+        }
+      }
+    },
+    "Workflow Instruction" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Workflow-Anweisung"
+          }
+        }
+      }
+    },
+    "Select vault..." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vault auswählen ..."
+          }
+        }
+      }
+    },
+    "Select your Obsidian vault folder" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wähle deinen Obsidian-Vault-Ordner"
+          }
+        }
+      }
+    },
+    "Subfolder:" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unterordner:"
+          }
+        }
+      }
+    },
+    "Tags:" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tags:"
+          }
+        }
+      }
+    },
+    "Vault" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vault"
+          }
+        }
+      }
+    },
+    "YAML Frontmatter" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YAML-Frontmatter"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

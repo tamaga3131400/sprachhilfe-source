@@ -1,0 +1,16 @@
+{
+    "id": "com.sprachhilfe.memory.openai-vector",
+    "name": "OpenAI Vector Memory",
+    "version": "1.0.0",
+    "minHostVersion": "0.14.0",
+    "sdkCompatibilityVersion": "v1",
+    "minOSVersion": "14.0",
+    "author": "Sprachhilfe",
+    "description": "Store and search memories using the OpenAI Vector Store API with semantic embeddings.",
+    "descriptions": {
+        "de": "Speichert und durchsucht Erinnerungen über die OpenAI Vector Store API mit semantischen Embeddings."
+    },
+    "category": "memory",
+    "iconSystemName": "brain",
+    "principalClass": "OpenAIVectorMemoryPlugin"
+}

@@ -1,0 +1,107 @@
+# Xcode
+build/
+build-*/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcworkspace/xcuserdata/
+DerivedData/
+*.hmap
+*.ipa
+*.pkg
+*.xcarchive
+*.dSYM.zip
+*.dSYM
+
+# SPM
+.build/
+.swiftpm/
+# Dependency lockfiles are build inputs and intentionally tracked. The cache
+# directories above still keep generated SwiftPM state out of Git.
+
+# macOS
+.DS_Store
+*.swp
+*~.nib
+xcuserdata/
+
+# Xcode Schemes (keep shared, ignore user-specific)
+*.xcodeproj/xcuserdata/**/*.xcscheme
+!*.xcodeproj/xcshareddata/xcschemes/*.xcscheme
+
+# CocoaPods (if used)
+Pods/
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/
+fastlane/test_output/
+
+# Claude Code
+.claude/
+.agents/
+.skills/
+
+# Code signing and notarization config (developer-specific). The generic
+# CodeSigning.xcconfig remains tracked so public source builds still work.
+CodeSigning.local.xcconfig
+*.local.xcconfig
+.notarytool
+*.notary
+*.notarytool
+*.notarization
+*notary*.json
+*notarization*.json
+
+# Git worktrees
+.worktrees/
+
+# Lokales Projekttagebuch (nicht auf GitHub)
+[Ll]ast[Dd]oing.md
+
+# Sparkle release tooling (downloaded on demand; appcast.xml is a local staging
+# file copied into the separate sprachhilfe-dist repo, not committed here)
+.sparkle-tools/
+appcast.xml
+
+# Local release artifacts and manuals never belong in the development repository.
+Sprachhilfe-*.dmg
+Sprachhilfe-*.zip
+release-output/
+public-release-*/
+Anleitung.md
+*.pdf
+*.docx
+*.log
+
+# Local specifications and machine-specific release configuration.
+docs/specs/
+.env*
+!.env.example
+*.p8
+*.p12
+*.pfx
+*.csr
+*.pem
+*.key
+*.cer
+*.crt
+*.der
+*.credentials
+*.keystore
+*.jks
+*.pkcs12
+*.mobileprovision
+*.provisionprofile
+*.secrets
+*.token
+*.sqlite
+*.sqlite3
+*.db
+*.realm
+__pycache__/
+.pytest_cache/
+.venv/
+venv/
+*.pyc
+*.pyo
