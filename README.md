@@ -9,6 +9,7 @@ Speech-to-text and AI text processing for macOS. Transcribe audio using on-devic
 The current stable release for macOS is available from the [Sprachhilfe distribution repository](https://github.com/tamaga3131400/sprachhilfe-dist/releases/latest). It includes system-wide dictation, file transcription, unified workflows, history, dictionary, snippets, bundled integrations, the community plugin registry, and local automation APIs. Advanced surfaces like the HTTP API, CLI, widgets, watch folders, and the plugin SDK remain supported for power users and automation.
 
 For source distribution, local build notes, and contribution rules, see [docs/DISTRIBUTION.md](docs/DISTRIBUTION.md).
+[Offizielle Website von Sprachhilfe](https://sprachhilfe.uk)
 
 ## Support Sprachhilfe
 
