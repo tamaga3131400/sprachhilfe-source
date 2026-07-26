@@ -196,6 +196,7 @@ struct SprachhilfeApp: App {
         }
 
         settingsScene
+        chatScene
 
         Window(String(localized: "Sprachhilfe Setup"), id: "setup") {
             setupContent
@@ -225,6 +226,14 @@ struct SprachhilfeApp: App {
         .defaultSize(width: 1050, height: 600)
     }
 
+    private var chatScene: some Scene {
+        Window(String(localized: "Chat"), id: "chat") {
+            chatContent
+        }
+        .windowResizability(.contentMinSize)
+        .defaultSize(width: 1180, height: 760)
+    }
+
     @ViewBuilder
     private var menuBarContent: some View {
         if AppConstants.isRunningTests {
@@ -249,6 +258,15 @@ struct SprachhilfeApp: App {
                 .task {
                     refreshStartupSheet()
                 }
+        }
+    }
+
+    @ViewBuilder
+    private var chatContent: some View {
+        if AppConstants.isRunningTests {
+            EmptyView()
+        } else {
+            ChatView(viewModel: ServiceContainer.shared.chatViewModel)
         }
     }
 
@@ -583,6 +601,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if let identifier = window.identifier?.rawValue.lowercased() {
             if identifier.contains("settings")
                 || identifier.contains("setup")
+                || identifier.contains("chat")
                 || identifier.contains("history")
                 || identifier.contains("errors") {
                 return true

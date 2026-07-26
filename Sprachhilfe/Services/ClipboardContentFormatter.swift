@@ -64,6 +64,136 @@ enum ClipboardContentFormatter {
     }
 }
 
+enum ChatCopyFormat: CaseIterable, Identifiable {
+    case plainText
+    case markdown
+    case richText
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .plainText: String(localized: "Plain Text")
+        case .markdown: String(localized: "Markdown")
+        case .richText: String(localized: "Rich Text")
+        }
+    }
+}
+
+/// A short-lived snapshot created only after the user asks to paste into a chat. It is never
+/// persisted and deliberately contains no pasteboard change monitoring.
+struct ChatPasteDraft: Equatable {
+    enum Kind: Equatable {
+        case empty
+        case text
+        case code
+        case url
+        case files
+        case unsupportedImage
+    }
+
+    var text: String
+    var fileURLs: [URL]
+    var containsUnsupportedImage: Bool
+
+    var kind: Kind {
+        if !fileURLs.isEmpty { return .files }
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return containsUnsupportedImage ? .unsupportedImage : .empty }
+        if Self.isWebURL(trimmed) { return .url }
+        if Self.looksLikeCode(trimmed) { return .code }
+        return .text
+    }
+
+    var webURLs: [String] {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return Self.isWebURL(trimmed) ? [trimmed] : []
+    }
+
+    static func isWebURL(_ text: String) -> Bool {
+        guard let url = URL(string: text), let host = url.host else { return false }
+        return !host.isEmpty && (url.scheme == "https" || url.scheme == "http")
+    }
+
+    static func looksLikeCode(_ text: String) -> Bool {
+        if text.contains("```") { return true }
+        let lines = text.components(separatedBy: .newlines)
+        let codeLines = lines.filter {
+            $0.contains("{") || $0.contains(";") || $0.hasPrefix("import ") || $0.hasPrefix("func ")
+        }
+        return lines.count >= 3 && codeLines.count >= 2
+    }
+}
+
+@MainActor
+enum ChatClipboardService {
+    enum Error: LocalizedError, Equatable {
+        case noExternalApplication
+        case unableToActivateExternalApplication
+
+        var errorDescription: String? {
+            switch self {
+            case .noExternalApplication:
+                String(localized: "No previously active app is available for insertion.")
+            case .unableToActivateExternalApplication:
+                String(localized: "The previously active app could not be activated.")
+            }
+        }
+    }
+
+    static func captureDraft(from pasteboard: NSPasteboard = .general) -> ChatPasteDraft {
+        let fileURLs = (pasteboard.readObjects(
+            forClasses: [NSURL.self],
+            options: [.urlReadingFileURLsOnly: true]
+        ) as? [URL]) ?? []
+        let imageTypes = [
+            NSPasteboard.PasteboardType.tiff,
+            NSPasteboard.PasteboardType("public.png"),
+            NSPasteboard.PasteboardType("public.jpeg")
+        ]
+        let containsImage = pasteboard.pasteboardItems?.contains {
+            $0.availableType(from: imageTypes) != nil
+        } ?? false
+        return ChatPasteDraft(
+            text: pasteboard.string(forType: .string) ?? "",
+            fileURLs: fileURLs,
+            containsUnsupportedImage: containsImage
+        )
+    }
+
+    static func copy(_ text: String, as format: ChatCopyFormat, to pasteboard: NSPasteboard = .general) {
+        pasteboard.clearContents()
+        switch format {
+        case .plainText:
+            let plainText = ClipboardContentFormatter.payload(for: text, outputFormat: "rtf")?.plainText ?? text
+            pasteboard.setString(plainText, forType: .string)
+        case .markdown:
+            pasteboard.setString(text, forType: .string)
+        case .richText:
+            if let payload = ClipboardContentFormatter.payload(for: text, outputFormat: "rtf") {
+                payload.write(to: pasteboard)
+            } else {
+                pasteboard.setString(text, forType: .string)
+            }
+        }
+    }
+
+    static func insertIntoLastExternalApplication(
+        _ text: String,
+        using textInsertionService: TextInsertionService,
+        targetApplication: NSRunningApplication? = ActivationSourceTracker.shared.lastExternalApplication
+    ) async throws -> TextInsertionService.InsertionResult {
+        guard let target = targetApplication else {
+            throw Error.noExternalApplication
+        }
+        guard target.activate(options: [.activateAllWindows]) else {
+            throw Error.unableToActivateExternalApplication
+        }
+        try? await Task.sleep(for: .milliseconds(120))
+        return try await textInsertionService.insertText(text, preserveClipboard: true)
+    }
+}
+
 private enum ClipboardOutputFormat {
     case richText
 

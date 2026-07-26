@@ -20,6 +20,7 @@ struct ChatDocumentImportActivity: Identifiable, Equatable {
 private struct ChatGenerationResult {
     let text: String
     let retrievalSummary: String?
+    let sourceDocumentIds: [String]
 }
 
 @MainActor
@@ -44,6 +45,7 @@ final class ChatViewModel: ObservableObject {
     @Published var isTranscribingVoice: Bool = false
     @Published var processingStatus: String?
     @Published var errorMessage: String?
+    @Published var noticeMessage: String?
     @Published private(set) var importActivities: [ChatDocumentImportActivity] = []
     /// Non-nil while a message row is in inline-edit mode.
     @Published var editingMessageId: UUID?
@@ -425,6 +427,55 @@ final class ChatViewModel: ObservableObject {
         }
     }
 
+    /// Imports explicitly selected Paste Studio sources before sending the accompanying message.
+    /// The draft remains view-local; only the user-approved context becomes a ChatDocument.
+    func sendPasteDraft(_ text: String, contextURLs: [String], contextFiles: [URL]) {
+        guard !contextURLs.isEmpty || !contextFiles.isEmpty else {
+            send(text)
+            return
+        }
+        guard let session = currentSession else {
+            errorMessage = String(localized: "No active chat session.")
+            return
+        }
+        guard let memoryPlugin = resolvedMemoryPlugin(), memoryPlugin.isReady else {
+            errorMessage = String(localized: "Select a ready vector store before adding pasted sources as context.")
+            return
+        }
+
+        Task {
+            do {
+                for urlString in contextURLs {
+                    let activityId = beginImport(named: URL(string: urlString)?.host ?? urlString)
+                    let document = try await documentService.importURL(
+                        urlString: urlString,
+                        sessionId: session.id,
+                        memoryPlugin: memoryPlugin,
+                        chatService: chatService
+                    )
+                    documents = chatService.documents(for: session.id)
+                    finishImport(activityId)
+                    Self.autoExtractGraphIfEnabled(document: document, memoryPlugin: memoryPlugin)
+                }
+                for url in contextFiles {
+                    let activityId = beginImport(named: url.lastPathComponent)
+                    let document = try await documentService.importDocument(
+                        url: url,
+                        sessionId: session.id,
+                        memoryPlugin: memoryPlugin,
+                        chatService: chatService
+                    )
+                    documents = chatService.documents(for: session.id)
+                    finishImport(activityId)
+                    Self.autoExtractGraphIfEnabled(document: document, memoryPlugin: memoryPlugin)
+                }
+                send(text)
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
     /// Fire-and-forget knowledge-graph extraction, only when the user opted into automatic
     /// extraction on import (default off - extraction costs several LLM calls per document)
     /// and a graph plugin is actually ready; a no-op otherwise.
@@ -498,10 +549,57 @@ final class ChatViewModel: ObservableObject {
         sendTask?.cancel()
     }
 
-    func copyToClipboard(_ text: String) {
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(text, forType: .string)
+    func copyToClipboard(_ text: String, format: ChatCopyFormat = .plainText) {
+        ChatClipboardService.copy(text, as: format)
+        showNotice(String(localized: "Copied to clipboard."))
+    }
+
+    func insertIntoLastActiveApp(_ text: String) {
+        Task {
+            do {
+                _ = try await ChatClipboardService.insertIntoLastExternalApplication(
+                    text,
+                    using: ServiceContainer.shared.textInsertionService
+                )
+                showNotice(String(localized: "Inserted into the previously active app."))
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    func sourceDocuments(for message: ChatMessage) -> [ChatDocument] {
+        let ids = Set(message.sourceDocumentIds)
+        guard !ids.isEmpty else { return [] }
+        let candidates = chatService.documents(for: message.sessionId)
+            + chatService.documents(for: ChatService.globalLibrarySessionId)
+        return candidates.filter { document in
+            ids.contains((document.indexDocumentId ?? document.id).uuidString)
+        }
+    }
+
+    func sessionSearchSnippet(for session: ChatSession, query: String) -> String? {
+        chatService.messages(for: session.id)
+            .lazy
+            .compactMap { ChatSearch.matchingSnippet(in: $0.content, query: query) }
+            .first
+    }
+
+    func sessionMatchesSearch(_ session: ChatSession, query: String) -> Bool {
+        let normalized = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalized.isEmpty else { return true }
+        return session.title.localizedCaseInsensitiveContains(normalized)
+            || sessionSearchSnippet(for: session, query: normalized) != nil
+    }
+
+    private func showNotice(_ message: String) {
+        noticeMessage = message
+        Task {
+            try? await Task.sleep(for: .seconds(2))
+            if self.noticeMessage == message {
+                self.noticeMessage = nil
+            }
+        }
     }
 
     // MARK: - Edit & Regenerate
@@ -612,7 +710,8 @@ final class ChatViewModel: ObservableObject {
                 if isLocal && chunks.count > 1 && currentResponseMode != .documentGrounded {
                     generation = ChatGenerationResult(
                         text: try await runChunkedAnalysis(chunks: chunks, session: session),
-                        retrievalSummary: String(localized: "Document retrieval was skipped because this long local-model request was processed in parts.")
+                        retrievalSummary: String(localized: "Document retrieval was skipped because this long local-model request was processed in parts."),
+                        sourceDocumentIds: []
                     )
                 } else {
                     generation = try await runRAGFlow(question: question, session: session)
@@ -623,7 +722,8 @@ final class ChatViewModel: ObservableObject {
                         sessionId: session.id,
                         role: "assistant",
                         content: generation.text,
-                        retrievalSummary: generation.retrievalSummary
+                        retrievalSummary: generation.retrievalSummary,
+                        sourceDocumentIds: generation.sourceDocumentIds
                     )
                     self.messages = self.chatService.messages(for: session.id)
                     self.isSending = false
@@ -660,7 +760,8 @@ final class ChatViewModel: ObservableObject {
                 if isLocal && chunks.count > 1 && currentResponseMode != .documentGrounded {
                     generation = ChatGenerationResult(
                         text: try await runChunkedAnalysis(chunks: chunks, session: session),
-                        retrievalSummary: String(localized: "Document retrieval was skipped because this long local-model request was processed in parts.")
+                        retrievalSummary: String(localized: "Document retrieval was skipped because this long local-model request was processed in parts."),
+                        sourceDocumentIds: []
                     )
                 } else {
                     generation = try await runRAGFlow(question: question, session: session)
@@ -670,7 +771,8 @@ final class ChatViewModel: ObservableObject {
                     _ = self.chatService.replaceMessage(
                         replaceMessage,
                         withContent: generation.text,
-                        retrievalSummary: generation.retrievalSummary
+                        retrievalSummary: generation.retrievalSummary,
+                        sourceDocumentIds: generation.sourceDocumentIds
                     )
                     self.messages = self.chatService.messages(for: session.id)
                     self.isSending = false
@@ -834,6 +936,7 @@ final class ChatViewModel: ObservableObject {
     private func runRAGFlow(question: String, session: ChatSession) async throws -> ChatGenerationResult {
         var contextBlock = ""
         var retrievalSummary: String?
+        var sourceDocumentIds: [String] = []
         let responseMode = ChatResponseMode(rawValue: session.responseMode) ?? .balanced
 
         // Kicked off before the vector search so the Neo4j round-trip overlaps with it instead
@@ -903,6 +1006,7 @@ final class ChatViewModel: ObservableObject {
                     --- END DOCUMENT CONTEXT ---
                     """
                     let sources = Array(Set(results.compactMap { $0.entry.metadata["fileName"] })).sorted()
+                    sourceDocumentIds = Array(Set(results.compactMap { $0.entry.metadata["docId"] })).sorted()
                     retrievalSummary = String(localized: "Used \(results.count) document excerpt(s) from \(sources.joined(separator: ", ")).")
                 } else {
                     retrievalSummary = String(localized: "No relevant document excerpts were found for this question.")
@@ -937,7 +1041,8 @@ final class ChatViewModel: ObservableObject {
         if responseMode == .documentGrounded, contextBlock.isEmpty {
             return ChatGenerationResult(
                 text: String(localized: "I could not find relevant information in the selected documents."),
-                retrievalSummary: retrievalSummary
+                retrievalSummary: retrievalSummary,
+                sourceDocumentIds: sourceDocumentIds
             )
         }
 
@@ -998,7 +1103,11 @@ final class ChatViewModel: ObservableObject {
             cloudModelOverride: session.modelId,
             skipMemoryInjection: true
         )
-        return ChatGenerationResult(text: answer, retrievalSummary: retrievalSummary)
+        return ChatGenerationResult(
+            text: answer,
+            retrievalSummary: retrievalSummary,
+            sourceDocumentIds: sourceDocumentIds
+        )
     }
 
     // MARK: - Helpers

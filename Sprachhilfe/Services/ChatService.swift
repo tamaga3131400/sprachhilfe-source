@@ -150,14 +150,16 @@ class ChatService: ObservableObject {
         sessionId: UUID,
         role: String,
         content: String,
-        retrievalSummary: String? = nil
+        retrievalSummary: String? = nil,
+        sourceDocumentIds: [String] = []
     ) -> ChatMessage? {
         guard let context = modelContext else { return nil }
         let message = ChatMessage(
             sessionId: sessionId,
             role: role,
             content: content,
-            retrievalSummary: retrievalSummary
+            retrievalSummary: retrievalSummary,
+            sourceDocumentIds: sourceDocumentIds
         )
         context.insert(message)
         if let session = sessions.first(where: { $0.id == sessionId }) {
@@ -187,13 +189,19 @@ class ChatService: ObservableObject {
     /// Creates a new assistant message that replaces the given one (conversation branch).
     /// The old message is preserved but hidden; the new one carries `replacesMessageId`.
     @discardableResult
-    func replaceMessage(_ message: ChatMessage, withContent content: String, retrievalSummary: String? = nil) -> ChatMessage? {
+    func replaceMessage(
+        _ message: ChatMessage,
+        withContent content: String,
+        retrievalSummary: String? = nil,
+        sourceDocumentIds: [String] = []
+    ) -> ChatMessage? {
         guard let context = modelContext else { return nil }
         let newMessage = ChatMessage(
             sessionId: message.sessionId,
             role: message.role,
             content: content,
             retrievalSummary: retrievalSummary,
+            sourceDocumentIds: sourceDocumentIds,
             replacesMessageId: message.id
         )
         context.insert(newMessage)
@@ -259,7 +267,8 @@ class ChatService: ObservableObject {
         chunkCount: Int,
         isGlobal: Bool = false,
         category: String = "",
-        memoryPluginId: String
+        memoryPluginId: String,
+        sourceURL: String? = nil
     ) -> ChatDocument? {
         guard let context = modelContext else { return nil }
         let doc = ChatDocument(
@@ -271,7 +280,8 @@ class ChatService: ObservableObject {
             isGlobal: isGlobal,
             category: category,
             indexDocumentId: id,
-            memoryPluginId: memoryPluginId
+            memoryPluginId: memoryPluginId,
+            sourceURL: sourceURL
         )
         context.insert(doc)
         save()

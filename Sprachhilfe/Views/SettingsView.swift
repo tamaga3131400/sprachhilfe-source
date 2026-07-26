@@ -4,7 +4,7 @@ import SprachhilfePluginSDK
 
 enum SettingsTab: Hashable {
     case home, general, recording, hotkeys, recorder
-    case dictationRecovery, fileTranscription, watchFolder, history, dictionary, snippets, workflows, profiles, prompts, integrations, chat, library, advanced, about
+    case dictationRecovery, fileTranscription, watchFolder, history, dictionary, snippets, workflows, profiles, prompts, integrations, library, advanced, about
 }
 
 private struct SettingsDestination: Identifiable, Hashable {
@@ -66,12 +66,6 @@ struct SettingsView: View {
                 title: String(localized: "Integrations"),
                 systemImage: "puzzlepiece.extension",
                 badge: registryService.availableUpdatesCount > 0 ? registryService.availableUpdatesCount : nil
-            ),
-            SettingsDestination(
-                tab: .chat,
-                title: localizedAppText("Chat", de: "Chat"),
-                systemImage: "bubble.left.and.bubble.right",
-                badge: nil
             ),
             SettingsDestination(
                 tab: .library,
@@ -188,8 +182,6 @@ struct SettingsView: View {
             WorkflowsSettingsView()
         case .integrations:
             PluginSettingsView()
-        case .chat:
-            ChatView(viewModel: ServiceContainer.shared.chatViewModel)
         case .library:
             LibraryView(viewModel: ServiceContainer.shared.libraryViewModel)
         case .advanced:
@@ -291,7 +283,6 @@ private func settingsDestinationSections(_ destinations: [SettingsDestination]) 
         settingsDestination(destinations, .snippets),
         settingsDestination(destinations, .workflows),
         settingsDestination(destinations, .integrations),
-        settingsDestination(destinations, .chat),
         settingsDestination(destinations, .library)
     ]
 

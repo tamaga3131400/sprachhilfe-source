@@ -10,6 +10,20 @@ enum ChatResponseMode: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
+enum ChatSearch {
+    static func matchingSnippet(in text: String, query: String, limit: Int = 92) -> String? {
+        let needle = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !needle.isEmpty,
+              let range = text.range(of: needle, options: .caseInsensitive) else {
+            return nil
+        }
+        let prefixStart = text.index(range.lowerBound, offsetBy: -28, limitedBy: text.startIndex) ?? text.startIndex
+        let suffixEnd = text.index(range.upperBound, offsetBy: 56, limitedBy: text.endIndex) ?? text.endIndex
+        let snippet = text[prefixStart..<suffixEnd].trimmingCharacters(in: .whitespacesAndNewlines)
+        return snippet.count > limit ? String(snippet.prefix(limit)) + "…" : String(snippet)
+    }
+}
+
 @Model
 final class ChatSession {
     var id: UUID
@@ -95,6 +109,9 @@ final class ChatMessage {
     var timestamp: Date
     /// Short, persisted explanation of whether and how document retrieval informed this answer.
     var retrievalSummary: String?
+    /// IDs of the indexed documents that supplied context for this answer. Kept as strings so
+    /// older chat stores can migrate without requiring a relationship rewrite.
+    var sourceDocumentIds: [String] = []
     /// When non-nil, this message is a newer variant of the message with the given ID.
     /// Used for conversation branches: regenerating creates a new message that replaces
     /// the old one in the UI while keeping the full history.
@@ -107,6 +124,7 @@ final class ChatMessage {
         content: String,
         timestamp: Date = Date(),
         retrievalSummary: String? = nil,
+        sourceDocumentIds: [String] = [],
         replacesMessageId: UUID? = nil
     ) {
         self.id = id
@@ -115,6 +133,7 @@ final class ChatMessage {
         self.content = content
         self.timestamp = timestamp
         self.retrievalSummary = retrievalSummary
+        self.sourceDocumentIds = sourceDocumentIds
         self.replacesMessageId = replacesMessageId
     }
 }
@@ -133,6 +152,8 @@ final class ChatDocument {
     var indexDocumentId: UUID?
     /// The storage plugin that owns the indexed chunks for this document.
     var memoryPluginId: String?
+    /// Original web location for URL imports. Local files intentionally leave this empty.
+    var sourceURL: String?
 
     init(
         id: UUID = UUID(),
@@ -144,7 +165,8 @@ final class ChatDocument {
         isGlobal: Bool = false,
         category: String = "",
         indexDocumentId: UUID? = nil,
-        memoryPluginId: String? = nil
+        memoryPluginId: String? = nil,
+        sourceURL: String? = nil
     ) {
         self.id = id
         self.sessionId = sessionId
@@ -156,6 +178,7 @@ final class ChatDocument {
         self.category = category
         self.indexDocumentId = indexDocumentId
         self.memoryPluginId = memoryPluginId
+        self.sourceURL = sourceURL
     }
 }
 

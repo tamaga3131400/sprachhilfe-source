@@ -13,11 +13,15 @@ struct ChatView: View {
     @State private var showURLPrompt = false
     @State private var urlInput = ""
     @State private var showCategoryFilter = false
-    @State private var showChatSettings = false
+    @State private var isContextPanelVisible = true
+    @State private var showPasteStudio = false
+    @State private var pasteDraft = ChatPasteDraft(text: "", fileURLs: [], containsUnsupportedImage: false)
+    @State private var showCommandPalette = false
     @State private var showArchivedSessions = false
     @State private var sessionSearchText = ""
     @State private var sessionToRename: ChatSession?
     @State private var sessionTitleDraft = ""
+    @FocusState private var isSidebarSearchFocused: Bool
 
     init(viewModel: ChatViewModel) {
         self.viewModel = viewModel
@@ -31,12 +35,29 @@ struct ChatView: View {
     }()
 
     var body: some View {
-        HStack(spacing: 0) {
-            sidebar
-            Divider()
-            chatMain
+        ZStack(alignment: .bottom) {
+            HStack(spacing: 0) {
+                sidebar
+                Divider()
+                chatMain
+                if isContextPanelVisible {
+                    Divider()
+                    contextPanel
+                }
+            }
+
+            if let notice = viewModel.noticeMessage {
+                Label(notice, systemImage: "checkmark.circle.fill")
+                    .font(.callout)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 9)
+                    .background(.regularMaterial, in: Capsule())
+                    .shadow(color: .black.opacity(0.16), radius: 10, y: 4)
+                    .padding(.bottom, 18)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }
-        .frame(minWidth: 700, minHeight: 500)
+        .frame(minWidth: 920, minHeight: 580)
         .onAppear {
             if viewModel.currentSession == nil, let first = viewModel.activeSessions.first {
                 viewModel.selectSession(first)
@@ -72,6 +93,40 @@ struct ChatView: View {
                 viewModel.importURL(url)
             }
         }
+        .sheet(isPresented: $showPasteStudio) {
+            ChatPasteStudio(draft: pasteDraft) { text, contextURLs, contextFiles in
+                viewModel.sendPasteDraft(text, contextURLs: contextURLs, contextFiles: contextFiles)
+            }
+        }
+        .sheet(isPresented: $showCommandPalette) {
+            ChatCommandPalette { command in
+                switch command {
+                case .newChat:
+                    viewModel.createNewSession()
+                case .searchChats:
+                    isSidebarSearchFocused = true
+                case .paste:
+                    presentPasteStudio()
+                case .toggleContext:
+                    isContextPanelVisible.toggle()
+                case .settings:
+                    ManagedAppWindowOpener.shared.open(id: "settings")
+                }
+            }
+        }
+        .background {
+            Button(action: presentPasteStudio) { EmptyView() }
+                .keyboardShortcut("p", modifiers: [.command, .shift])
+                .hidden()
+            Button { showCommandPalette = true } label: { EmptyView() }
+                .keyboardShortcut("k", modifiers: .command)
+                .hidden()
+        }
+    }
+
+    private func presentPasteStudio() {
+        pasteDraft = ChatClipboardService.captureDraft()
+        showPasteStudio = true
     }
 
     // MARK: - Sidebar
@@ -107,6 +162,7 @@ struct ChatView: View {
 
             TextField(localizedAppText("Search chats", de: "Chats durchsuchen"), text: $sessionSearchText)
                 .textFieldStyle(.roundedBorder)
+                .focused($isSidebarSearchFocused)
                 .padding(.horizontal, 8)
                 .padding(.bottom, 6)
 
@@ -157,7 +213,7 @@ struct ChatView: View {
         let source = showArchivedSessions ? viewModel.archivedSessions : viewModel.activeSessions
         let search = sessionSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
         return source
-            .filter { search.isEmpty || $0.title.localizedCaseInsensitiveContains(search) }
+            .filter { viewModel.sessionMatchesSearch($0, query: search) }
             .sorted { lhs, rhs in
                 if lhs.isPinned != rhs.isPinned { return lhs.isPinned }
                 return lhs.updatedAt > rhs.updatedAt
@@ -196,7 +252,10 @@ struct ChatView: View {
 
     @ViewBuilder
     private func sessionRow(_ session: ChatSession) -> some View {
-        ChatSessionRow(session: session)
+        ChatSessionRow(
+            session: session,
+            searchPreview: viewModel.sessionSearchSnippet(for: session, query: sessionSearchText)
+        )
             .tag(session)
             .contextMenu {
                 if showArchivedSessions {
@@ -311,10 +370,6 @@ struct ChatView: View {
                     }
                     Divider()
                 }
-                systemPromptArea
-                Divider()
-                documentArea
-                Divider()
                 messageList
                 Divider()
                 inputBar
@@ -330,7 +385,7 @@ struct ChatView: View {
         HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(viewModel.currentSession?.title ?? "")
-                    .font(.headline)
+                    .font(.headline.weight(.semibold))
                     .lineLimit(1)
                 Text(chatConfigurationSummary)
                     .font(.caption)
@@ -341,24 +396,69 @@ struct ChatView: View {
             Spacer()
 
             Button {
-                showChatSettings = true
+                isContextPanelVisible.toggle()
             } label: {
-                Label(localizedAppText("Chat settings", de: "Chat-Einstellungen"), systemImage: "slider.horizontal.3")
+                Label(
+                    isContextPanelVisible
+                        ? localizedAppText("Hide context", de: "Kontext ausblenden")
+                        : localizedAppText("Show context", de: "Kontext einblenden"),
+                    systemImage: "sidebar.right"
+                )
             }
             .buttonStyle(.bordered)
-            .popover(isPresented: $showChatSettings, arrowEdge: .top) {
-                chatSettingsPopover
-            }
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(Self.toolbarBandBackground)
+        .padding(.vertical, 10)
+        .background(.thinMaterial)
     }
 
-    private var chatSettingsPopover: some View {
+    private var contextPanel: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Label(localizedAppText("Conversation context", de: "Gesprächskontext"), systemImage: "slider.horizontal.3")
+                    .font(.headline)
+                Spacer()
+                Button {
+                    isContextPanelVisible = false
+                } label: {
+                    Image(systemName: "sidebar.right")
+                }
+                .buttonStyle(.borderless)
+                .help(localizedAppText("Hide context", de: "Kontext ausblenden"))
+            }
+            .padding(12)
+
+            Divider()
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    chatSettingsControls
+                    Divider()
+                    systemPromptArea
+                    Divider()
+                    documentArea
+                    Divider()
+                    Label(
+                        localizedAppText(
+                            "Online research will be available as an opt-in integration.",
+                            de: "Online-Recherche wird später als optionale Integration verfügbar sein."
+                        ),
+                        systemImage: "globe"
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+                .padding(12)
+            }
+        }
+        .frame(width: 330)
+        .background(.regularMaterial)
+    }
+
+    private var chatSettingsControls: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(localizedAppText("Chat settings", de: "Chat-Einstellungen"))
-                .font(.headline)
+            Text(localizedAppText("Model & mode", de: "Modell & Modus"))
+                .font(.subheadline.weight(.semibold))
 
             Picker(String(localized: "Provider"), selection: Binding(
                 get: { viewModel.currentSession?.providerId ?? "" },
@@ -438,7 +538,6 @@ struct ChatView: View {
                     Spacer()
                     Button(localizedAppText("Load", de: "Laden")) {
                         viewModel.applyPresetToCurrent(preset)
-                        showChatSettings = false
                     }
                     .buttonStyle(.borderless)
                     .controlSize(.small)
@@ -461,8 +560,6 @@ struct ChatView: View {
                 .controlSize(.small)
             }
         }
-        .padding()
-        .frame(width: 340)
     }
 
     private func responseModeDescription(_ mode: ChatResponseMode) -> String {
@@ -532,9 +629,7 @@ struct ChatView: View {
                 onChange: { viewModel.updateSessionSystemPrompt($0) }
             )
             .id(session.id)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(Self.toolbarBandBackground)
+            .padding(.vertical, 2)
         }
     }
 
@@ -773,10 +868,12 @@ struct ChatView: View {
                         ForEach(visibleMessages, id: \.id) { message in
                             ChatMessageRow(
                                 message: message,
+                                sourceDocuments: viewModel.sourceDocuments(for: message),
                                 branchCount: branchCount(for: message),
                                 maxContentWidth: contentWidth,
                                 isEditing: viewModel.editingMessageId == message.id,
-                                onCopy: { viewModel.copyToClipboard(message.content) },
+                                onCopy: { format in viewModel.copyToClipboard(message.content, format: format) },
+                                onInsert: { viewModel.insertIntoLastActiveApp(message.content) },
                                 onEdit: { viewModel.beginEditing(message) },
                                 onRegenerate: { viewModel.regenerate(message) },
                                 onSaveEdit: { viewModel.saveEdit(message, newContent: $0) },
@@ -840,6 +937,7 @@ struct ChatView: View {
             isTranscribingVoice: viewModel.isTranscribingVoice,
             dictatedText: viewModel.dictatedText,
             onAttach: { showFilePicker = true },
+            onPaste: presentPasteStudio,
             onToggleRecording: { viewModel.toggleRecording() },
             onConsumeDictation: { viewModel.clearDictatedText() },
             onSend: { viewModel.send($0) },
@@ -944,6 +1042,7 @@ private struct ChatInputBar: View {
     let isTranscribingVoice: Bool
     let dictatedText: String?
     let onAttach: () -> Void
+    let onPaste: () -> Void
     let onToggleRecording: () -> Void
     let onConsumeDictation: () -> Void
     let onSend: (String) -> Void
@@ -965,6 +1064,15 @@ private struct ChatInputBar: View {
             .buttonStyle(.plain)
             .disabled(isSending)
             .help(localizedAppText("Attach documents", de: "Dokumente anhängen"))
+
+            Button(action: onPaste) {
+                Image(systemName: "clipboard")
+                    .font(.title3)
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            .disabled(isSending)
+            .help(localizedAppText("Paste from clipboard", de: "Aus Zwischenablage einfügen"))
 
             Button(action: onToggleRecording) {
                 if isTranscribingVoice {
@@ -1123,6 +1231,7 @@ private struct SystemPromptSection: View {
 
 private struct ChatSessionRow: View {
     let session: ChatSession
+    let searchPreview: String?
 
     var body: some View {
         HStack(spacing: 5) {
@@ -1134,6 +1243,12 @@ private struct ChatSessionRow: View {
                 Text(session.updatedAt, style: .relative)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
+                if let searchPreview {
+                    Text(searchPreview)
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(1)
+                }
             }
             if session.isPinned {
                 Image(systemName: "pin.fill")
@@ -1149,10 +1264,12 @@ private struct ChatSessionRow: View {
 
 private struct ChatMessageRow: View {
     let message: ChatMessage
+    let sourceDocuments: [ChatDocument]
     let branchCount: Int
     let maxContentWidth: CGFloat
     let isEditing: Bool
-    let onCopy: () -> Void
+    let onCopy: (ChatCopyFormat) -> Void
+    let onInsert: () -> Void
     let onEdit: () -> Void
     let onRegenerate: () -> Void
     let onSaveEdit: (String) -> Void
@@ -1215,6 +1332,9 @@ private struct ChatMessageRow: View {
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
+                    if !sourceDocuments.isEmpty {
+                        ChatSourceChips(documents: sourceDocuments)
+                    }
                     actionRow
                 }
             }
@@ -1259,21 +1379,27 @@ private struct ChatMessageRow: View {
             MarkdownContentView(
                 text: message.content,
                 contentBackground: contentBackground,
-                onCopyCode: { code in
-                    let pasteboard = NSPasteboard.general
-                    pasteboard.clearContents()
-                    pasteboard.setString(code, forType: .string)
-                }
+                onCopyCode: { code in ChatClipboardService.copy(code, as: .plainText) }
             )
         }
     }
 
     private var actionRow: some View {
         HStack(spacing: 12) {
-            Button(action: onCopy) {
+            Menu {
+                ForEach(ChatCopyFormat.allCases) { format in
+                    Button(format.title) {
+                        onCopy(format)
+                    }
+                }
+                Divider()
+                Button(localizedAppText("Insert into last active app", de: "In zuletzt aktive App einfügen")) {
+                    onInsert()
+                }
+            } label: {
                 Image(systemName: "doc.on.doc")
             }
-            .help(localizedAppText("Copy", de: "Kopieren"))
+            .help(localizedAppText("Copy or insert", de: "Kopieren oder einfügen"))
 
             if isUser {
                 Button(action: onEdit) {
@@ -1312,6 +1438,236 @@ private struct ChatMessageRow: View {
             }
             .controlSize(.small)
         }
+    }
+}
+
+private struct ChatSourceChips: View {
+    let documents: [ChatDocument]
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(documents, id: \.id) { document in
+                    Group {
+                        if let sourceURL = document.sourceURL, let url = URL(string: sourceURL) {
+                            Button {
+                                NSWorkspace.shared.open(url)
+                            } label: {
+                                sourceLabel(for: document)
+                            }
+                            .buttonStyle(.borderless)
+                            .help(sourceURL)
+                        } else {
+                            sourceLabel(for: document)
+                        }
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.secondary.opacity(0.1), in: Capsule())
+                }
+            }
+        }
+        .frame(height: 26)
+    }
+
+    private func sourceLabel(for document: ChatDocument) -> some View {
+        Label(document.fileName, systemImage: document.sourceURL == nil ? "doc.text" : "link")
+            .font(.caption2)
+            .lineLimit(1)
+    }
+}
+
+private struct ChatPasteStudio: View {
+    let draft: ChatPasteDraft
+    let onSubmit: (String, [String], [URL]) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var text: String
+    @State private var includeURLAsContext = false
+    @State private var contextFileURLs: Set<URL> = []
+
+    init(draft: ChatPasteDraft, onSubmit: @escaping (String, [String], [URL]) -> Void) {
+        self.draft = draft
+        self.onSubmit = onSubmit
+        _text = State(initialValue: draft.text)
+    }
+
+    private var canSend: Bool {
+        !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Label(localizedAppText("Paste Studio", de: "Einfüge-Studio"), systemImage: "clipboard")
+                    .font(.title3.weight(.semibold))
+                Spacer()
+                Text(kindTitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Text(localizedAppText(
+                "Review content before it is sent. Nothing from your clipboard is kept after this window closes.",
+                de: "Prüfe den Inhalt vor dem Senden. Nach dem Schließen wird nichts aus deiner Zwischenablage gespeichert."
+            ))
+            .font(.caption)
+            .foregroundStyle(.secondary)
+
+            if draft.containsUnsupportedImage {
+                Label(
+                    localizedAppText(
+                        "Images are recognized but image analysis is not supported yet.",
+                        de: "Bilder wurden erkannt, Bildanalyse wird aber noch nicht unterstützt."
+                    ),
+                    systemImage: "photo.badge.exclamationmark"
+                )
+                .font(.caption)
+                .foregroundStyle(.orange)
+            }
+
+            if !draft.fileURLs.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(localizedAppText("Files", de: "Dateien"))
+                        .font(.subheadline.weight(.medium))
+                    ForEach(draft.fileURLs, id: \.self) { url in
+                        Toggle(isOn: Binding(
+                            get: { contextFileURLs.contains(url) },
+                            set: { include in
+                                if include { contextFileURLs.insert(url) }
+                                else { contextFileURLs.remove(url) }
+                            }
+                        )) {
+                            Label(url.lastPathComponent, systemImage: "doc")
+                                .lineLimit(1)
+                        }
+                        .toggleStyle(.checkbox)
+                    }
+                    Text(localizedAppText(
+                        "Selected files are indexed as chat context before your message is sent.",
+                        de: "Ausgewählte Dateien werden vor dem Senden als Chat-Kontext indexiert."
+                    ))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                }
+            }
+
+            if ChatPasteDraft.isWebURL(text.trimmingCharacters(in: .whitespacesAndNewlines)) {
+                Toggle(isOn: $includeURLAsContext) {
+                    Label(
+                        localizedAppText("Load this page as context", de: "Diese Webseite als Kontext laden"),
+                        systemImage: "globe"
+                    )
+                }
+                .toggleStyle(.checkbox)
+            }
+
+            TextEditor(text: $text)
+                .font(draft.kind == .code ? .system(.body, design: .monospaced) : .body)
+                .scrollContentBackground(.hidden)
+                .frame(minHeight: 140, maxHeight: 280)
+                .padding(8)
+                .background(Color.secondary.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
+                .overlay(alignment: .center) {
+                    if draft.kind == .empty || draft.kind == .unsupportedImage {
+                        Text(localizedAppText("No text content to send", de: "Kein Text zum Senden vorhanden"))
+                            .foregroundStyle(.tertiary)
+                            .allowsHitTesting(false)
+                    }
+                }
+
+            HStack {
+                Button(localizedAppText("Cancel", de: "Abbrechen")) { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+                Spacer()
+                Button(localizedAppText("Send", de: "Senden")) {
+                    let contextURLs = includeURLAsContext
+                        ? [text.trimmingCharacters(in: .whitespacesAndNewlines)]
+                        : []
+                    onSubmit(text, contextURLs, Array(contextFileURLs))
+                    dismiss()
+                }
+                .keyboardShortcut(.defaultAction)
+                .buttonStyle(.borderedProminent)
+                .disabled(!canSend)
+            }
+        }
+        .padding(20)
+        .frame(width: 560)
+    }
+
+    private var kindTitle: String {
+        switch draft.kind {
+        case .empty: localizedAppText("Empty", de: "Leer")
+        case .text: localizedAppText("Text", de: "Text")
+        case .code: localizedAppText("Code", de: "Code")
+        case .url: localizedAppText("Web link", de: "Weblink")
+        case .files: localizedAppText("Files", de: "Dateien")
+        case .unsupportedImage: localizedAppText("Image", de: "Bild")
+        }
+    }
+}
+
+private enum ChatWorkspaceCommand: CaseIterable, Identifiable {
+    case newChat
+    case searchChats
+    case paste
+    case toggleContext
+    case settings
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .newChat: localizedAppText("New chat", de: "Neuer Chat")
+        case .searchChats: localizedAppText("Search chats", de: "Chats durchsuchen")
+        case .paste: localizedAppText("Open Paste Studio", de: "Einfüge-Studio öffnen")
+        case .toggleContext: localizedAppText("Show or hide context", de: "Kontext ein- oder ausblenden")
+        case .settings: localizedAppText("Open settings", de: "Einstellungen öffnen")
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .newChat: "plus.bubble"
+        case .searchChats: "magnifyingglass"
+        case .paste: "clipboard"
+        case .toggleContext: "sidebar.right"
+        case .settings: "gear"
+        }
+    }
+}
+
+private struct ChatCommandPalette: View {
+    let execute: (ChatWorkspaceCommand) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var searchText = ""
+
+    private var commands: [ChatWorkspaceCommand] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return ChatWorkspaceCommand.allCases.filter {
+            query.isEmpty || $0.title.localizedCaseInsensitiveContains(query)
+        }
+    }
+
+    var body: some View {
+        VStack(spacing: 10) {
+            TextField(localizedAppText("Type a command", de: "Befehl eingeben"), text: $searchText)
+                .textFieldStyle(.roundedBorder)
+            List(commands) { command in
+                Button {
+                    execute(command)
+                    dismiss()
+                } label: {
+                    Label(command.title, systemImage: command.icon)
+                }
+                .buttonStyle(.plain)
+            }
+            .listStyle(.inset)
+        }
+        .padding(16)
+        .frame(width: 440, height: 300)
     }
 }
 

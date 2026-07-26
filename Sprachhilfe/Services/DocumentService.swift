@@ -91,6 +91,7 @@ class DocumentService {
             chatService: chatService,
             isGlobal: isGlobal,
             category: category,
+            sourceURL: normalized,
             extraMetadata: ["sourceURL": normalized]
         )
     }
@@ -106,6 +107,7 @@ class DocumentService {
         chatService: ChatService,
         isGlobal: Bool,
         category: String = "",
+        sourceURL: String? = nil,
         extraMetadata: [String: String] = [:]
     ) async throws -> ChatDocument {
         let chunks = DocumentService.chunk(text: text, size: Self.chunkSize, overlap: Self.chunkOverlap)
@@ -151,7 +153,8 @@ class DocumentService {
             chunkCount: chunks.count,
             isGlobal: isGlobal,
             category: category,
-            memoryPluginId: type(of: memoryPlugin).pluginId
+            memoryPluginId: type(of: memoryPlugin).pluginId,
+            sourceURL: sourceURL
         )
 
         return doc ?? ChatDocument(
@@ -163,7 +166,8 @@ class DocumentService {
             isGlobal: isGlobal,
             category: category,
             indexDocumentId: documentId,
-            memoryPluginId: type(of: memoryPlugin).pluginId
+            memoryPluginId: type(of: memoryPlugin).pluginId,
+            sourceURL: sourceURL
         )
     }
 
